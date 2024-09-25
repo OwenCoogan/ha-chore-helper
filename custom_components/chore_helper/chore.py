@@ -223,6 +223,15 @@ class Chore(RestoreEntity):
     def icon(self) -> str:
         """Return the entity icon."""
         return self._attr_icon
+    
+    @property
+    def user(self):
+        return self._user
+
+    def assign_user(self, user: str):
+        """Assign a user to this chore."""
+        self._user = user
+        self.update_state()
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
