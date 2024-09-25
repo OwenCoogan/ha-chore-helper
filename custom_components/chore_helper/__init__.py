@@ -82,7 +82,7 @@ COMPLETE_NOW_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_ENTITY_ID): vol.All(cv.ensure_list, [cv.string]),
         vol.Optional(const.ATTR_LAST_COMPLETED): cv.datetime,
-        vol.Optional(const.CONF_USER): vol.In([]),  # Initialize with an empty list
+        vol.Optional(const.CONF_USER): vol.In(valid_user_ids),
     }
 )
 
@@ -128,37 +128,6 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     """Set up platform - register services, initialize data structure."""
     global valid_user_ids
     valid_user_ids = await get_user_ids(hass)  # Retrieve user IDs at setup
-
-    # Update the SENSOR_SCHEMA to use the valid user IDs
-    SENSOR_SCHEMA = vol.Schema(
-        {
-            vol.Required(const.CONF_FREQUENCY): vol.In(frequencies),
-            vol.Required(const.CONF_ICON_NORMAL): cv.icon,
-            vol.Optional(const.CONF_ICON_TODAY): cv.icon,
-            vol.Optional(const.CONF_ICON_TOMORROW): cv.icon,
-            vol.Optional(ATTR_HIDDEN): cv.boolean,
-            vol.Optional(const.CONF_MANUAL): cv.boolean,
-            vol.Optional(const.CONF_DATE): helpers.month_day_text,
-            vol.Optional(const.CONF_TIME): cv.time,
-            vol.Optional(CONF_ENTITIES): cv.entity_ids,
-            vol.Optional(const.CONF_CHORE_DAY): vol.In(WEEKDAYS),
-            vol.Optional(const.CONF_FIRST_MONTH): vol.In(months),
-            vol.Optional(const.CONF_LAST_MONTH): vol.In(months),
-            vol.Optional(const.CONF_WEEKDAY_ORDER_NUMBER): vol.All(
-                vol.Coerce(int), vol.Range(min=1, max=5)
-            ),
-            vol.Optional(const.CONF_PERIOD): vol.All(
-                vol.Coerce(int), vol.Range(min=1, max=1000)
-            ),
-            vol.Optional(const.CONF_FIRST_WEEK): vol.All(
-                vol.Coerce(int), vol.Range(min=1, max=52)
-            ),
-            vol.Optional(const.CONF_START_DATE): cv.date,
-            vol.Optional(const.CONF_DATE_FORMAT): cv.string,
-            vol.Optional(const.CONF_USER): vol.In(list(valid_user_ids.keys())),
-        },
-        extra=vol.ALLOW_EXTRA,
-    )
 
     # Service Handlers
     async def handle_add_date(call: ServiceCall) -> None:
@@ -224,6 +193,7 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
                 entity.update_state()
             except KeyError as err:
                 LOGGER.error("Failed updating state for %s - %s", entity_id, err)
+    
 
     async def handle_complete_chore(call: ServiceCall) -> None:
         """Handle the complete_chore service call."""

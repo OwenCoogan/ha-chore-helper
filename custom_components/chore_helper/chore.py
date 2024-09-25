@@ -223,7 +223,7 @@ class Chore(RestoreEntity):
     def icon(self) -> str:
         """Return the entity icon."""
         return self._attr_icon
-    
+
     @property
     def user(self) -> str:
         """Return the user assigned to this chore."""
