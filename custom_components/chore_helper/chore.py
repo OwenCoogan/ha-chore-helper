@@ -225,7 +225,8 @@ class Chore(RestoreEntity):
         return self._attr_icon
     
     @property
-    def user(self):
+    def user(self) -> str:
+        """Return the user assigned to this chore."""
         return self._user
 
     def assign_user(self, user: str):

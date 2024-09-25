@@ -126,7 +126,6 @@ OFFSET_DATE_SCHEMA = vol.Schema(
 # pylint: disable=unused-argument
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     """Set up platform - register services, initialize data structure."""
-    
     global valid_user_ids
     valid_user_ids = await get_user_ids(hass)  # Retrieve user IDs at setup
 
@@ -279,7 +278,6 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     )
     return True
 
-
 async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
     """Set up this integration using UI."""
     LOGGER.debug(
@@ -292,7 +290,6 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
     # Add sensor
     await hass.config_entries.async_forward_entry_setups(config_entry, PLATFORMS)
     return True
-
 
 async def async_remove_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> None:
     """Handle removal of an entry."""
