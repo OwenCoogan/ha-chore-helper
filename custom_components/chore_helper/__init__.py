@@ -193,7 +193,6 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
                 entity.update_state()
             except KeyError as err:
                 LOGGER.error("Failed updating state for %s - %s", entity_id, err)
-    
 
     async def handle_complete_chore(call: ServiceCall) -> None:
         """Handle the complete_chore service call."""
