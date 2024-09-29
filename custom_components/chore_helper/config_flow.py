@@ -4,7 +4,7 @@ from __future__ import annotations
 
 # import uuid
 from collections.abc import Mapping
-from typing import Any, cast
+from typing import Any
 
 import voluptuous as vol
 from homeassistant.const import ATTR_HIDDEN, CONF_NAME
@@ -294,6 +294,6 @@ class ChoreHelperConfigFlowHandler(SchemaConfigFlowHandler, domain=const.DOMAIN)
         The options parameter contains config entry options, which is the union of user
         input from the config flow steps.
         """
-        title = options["name"] if "name" in options else ""
+        title = options.get("name", "")
         user = options.get("user", "Unknown user")
         return f"{title} (Assigned to {user})"
