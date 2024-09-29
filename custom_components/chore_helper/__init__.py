@@ -33,7 +33,7 @@ frequencies = [f["value"] for f in const.FREQUENCY_OPTIONS]
 
 async def get_user_ids(hass: HomeAssistant):
     """Return a dictionary of valid user IDs and their names."""
-    users = hass.auth.async_get_users()
+    users = await hass.auth.async_get_users()
     return {user.id: user.name for user in users if not user.is_owner}
 
 # Initialize the user IDs once at setup
