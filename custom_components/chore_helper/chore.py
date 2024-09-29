@@ -100,6 +100,7 @@ class Chore(RestoreEntity):
         self._offset_dates: str = None
         self._add_dates: str = None
         self._remove_dates: str = None
+        self._user: str | None = None
         try:
             self._start_date = helpers.to_date(config.get(const.CONF_START_DATE))
         except ValueError:
@@ -249,6 +250,7 @@ class Chore(RestoreEntity):
             ATTR_UNIT_OF_MEASUREMENT: self.native_unit_of_measurement,
             # Needed for translations to work
             ATTR_DEVICE_CLASS: self.DEVICE_CLASS,
+            "user": self._user 
         }
 
     @property

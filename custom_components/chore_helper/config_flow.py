@@ -117,6 +117,7 @@ def general_schema_definition(
             handler.options,
             const.DEFAULT_SHOW_OVERDUE_TODAY,
         ): bool,
+        optional(const.CONF_USER, handler.options): selector.UserSelector(),
     }
 
     return schema
@@ -293,4 +294,6 @@ class ChoreHelperConfigFlowHandler(SchemaConfigFlowHandler, domain=const.DOMAIN)
         The options parameter contains config entry options, which is the union of user
         input from the config flow steps.
         """
-        return cast(str, options["name"]) if "name" in options else ""
+        title = options["name"] if "name" in options else ""
+        user = options.get("user", "Unknown user")
+        return f"{title} (Assigned to {user})"
