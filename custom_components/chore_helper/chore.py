@@ -250,7 +250,7 @@ class Chore(RestoreEntity):
             ATTR_UNIT_OF_MEASUREMENT: self.native_unit_of_measurement,
             # Needed for translations to work
             ATTR_DEVICE_CLASS: self.DEVICE_CLASS,
-            "user": self._user 
+            "user": self._user
         }
 
     @property
