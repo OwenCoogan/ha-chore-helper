@@ -105,7 +105,7 @@ class Chore(RestoreEntity):
         self._attr_state = state.state
         self._last_updated = None  # Unblock update after options change
         self._days = state.attributes.get(const.ATTR_DAYS)
-        self._next_due_date = helpers.parse_optional_date(state.attributes, const.ATTR_NEXT_DATE)
+        self._next_due_date = helpers.parse_optional_datetime(state.attributes, const.ATTR_NEXT_DATE)
         self.last_completed = helpers.parse_optional_datetime(state.attributes, const.ATTR_LAST_COMPLETED)
         self._overdue = state.attributes.get(const.ATTR_OVERDUE, False)
         self._overdue_days = state.attributes.get(const.ATTR_OVERDUE_DAYS)
