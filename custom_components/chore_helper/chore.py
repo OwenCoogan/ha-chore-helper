@@ -1,9 +1,9 @@
+"""Module for managing chore sensors in Home Assistant."""
+
 from __future__ import annotations
 
-from datetime import date, datetime, time, timedelta
-from typing import Any, Generator
-from collections.abc import Iterable
-from dateutil.relativedelta import relativedelta
+from datetime import date, datetime
+from typing import Any
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     ATTR_DEVICE_CLASS,
@@ -42,7 +42,7 @@ class Chore(RestoreEntity):
 
         # Start date setup
         self._start_date = self._get_start_date(config.get(const.CONF_START_DATE))
-    
+
     def _get_month(self, month_name: str) -> int:
         """Get the integer value of the month from its name."""
         months = [m["value"] for m in const.MONTH_OPTIONS]
