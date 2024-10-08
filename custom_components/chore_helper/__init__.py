@@ -254,10 +254,11 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
 
 async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
     """Set up this integration using UI."""
+    frequency = config_entry.options.get(const.CONF_FREQUENCY, 'weekly')
     LOGGER.debug(
         "Setting %s (%s) from ConfigFlow",
         config_entry.title,
-        config_entry.options[const.CONF_FREQUENCY],
+        config_entry.options[frequency],
     )
     config_entry.add_update_listener(update_listener)
 
