@@ -78,7 +78,7 @@ COMPLETE_NOW_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_ENTITY_ID): vol.All(cv.ensure_list, [cv.string]),
         vol.Optional(const.ATTR_LAST_COMPLETED): cv.datetime,
-        vol.Optional(const.CONF_USER): vol.In(valid_person_ids),
+        vol.Optional(const.CONF_USER): vol.In(valid_person_ids),  # This will be populated later
     }
 )
 
@@ -212,12 +212,14 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
                     return
 
                 entity.last_completed = dt_util.as_local(last_completed)
+                entity.assigned_user = completing_user  # Assign the user to the chore
                 entity.update_state()
             except KeyError as err:
                 LOGGER.error(
                     "Failed setting last completed for %s - %s", entity_id, err
                 )
 
+    # Register service calls
     hass.services.async_register(
         const.DOMAIN,
         "complete",

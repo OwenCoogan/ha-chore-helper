@@ -31,6 +31,12 @@ async def get_user_options(hass):
     ]
 
 
+async def get_person_entities(hass):
+    """Return a dictionary of valid person entity IDs and their names."""
+    persons = hass.states.async_all('person')  # Fetch all entities in the 'person' domain
+    return {person.entity_id: person.name for person in persons}
+
+
 async def _validate_config(
     _: SchemaConfigFlowHandler | SchemaOptionsFlowHandler, data: Any
 ) -> Any:
@@ -143,6 +149,11 @@ def general_schema_definition(
             const.CONF_USER, handler.options
         ): selector.SelectSelector(
             selector.SelectSelectorConfig(options=user_options)
+        ),
+        optional(
+            const.CONF_PERSON, handler.options
+        ): selector.SelectSelector(
+            selector.SelectSelectorConfig(options=await get_person_entities(handler.hass))
         ),
     }
 
