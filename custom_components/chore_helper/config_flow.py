@@ -29,13 +29,16 @@ async def get_user_options(hass):
         for user in users
     ]
 
+
 async def _validate_config(
     _: SchemaConfigFlowHandler | SchemaOptionsFlowHandler, data: Any
 ) -> Any:
     """Validate config."""
+    # Validate day of the month
     if const.CONF_DAY_OF_MONTH in data and data[const.CONF_DAY_OF_MONTH] < 1:
         data[const.CONF_DAY_OF_MONTH] = None
 
+    # Validate the date field
     if const.CONF_DATE in data:
         if (
             data[const.CONF_DATE] == "0"
@@ -49,12 +52,14 @@ async def _validate_config(
             except vol.Invalid as exc:
                 raise SchemaFlowError("month_day") from exc
 
+    # Validate weekday order number
     if (
         const.CONF_WEEKDAY_ORDER_NUMBER in data
         and int(data[const.CONF_WEEKDAY_ORDER_NUMBER]) == 0
     ):
         data[const.CONF_WEEKDAY_ORDER_NUMBER] = None
 
+    # Validate chore day
     if const.CONF_CHORE_DAY in data and data[const.CONF_CHORE_DAY] == "0":
         data[const.CONF_CHORE_DAY] = None
 
@@ -133,7 +138,7 @@ def general_schema_definition(
             handler.options,
             const.DEFAULT_SHOW_OVERDUE_TODAY,
         ): bool,
-         optional(
+        optional(
             const.CONF_USER, handler.options
         ): selector.SelectSelector(
             selector.SelectSelectorConfig(options=user_options)
@@ -164,7 +169,7 @@ async def detail_config_schema(
 ) -> vol.Schema:
     """Generate options schema."""
     options_schema: dict[vol.Optional | vol.Required, Any] = {}
-    frequency = handler.options[const.CONF_FREQUENCY]
+    frequency = handler.options.get(const.CONF_FREQUENCY)
 
     if frequency not in const.BLANK_FREQUENCY:
         if frequency in (
@@ -203,7 +208,7 @@ async def detail_config_schema(
             options_schema[optional(const.CONF_DAY_OF_MONTH, handler.options)] = (
                 selector.NumberSelector(
                     selector.NumberSelectorConfig(
-                        min=0,
+                        min=1,
                         max=31,
                         mode=selector.NumberSelectorMode.BOX,
                     )
@@ -299,7 +304,6 @@ OPTIONS_FLOW: dict[str, SchemaFlowFormStep | SchemaFlowMenuStep] = {
     ),
 }
 
-
 # mypy: ignore-errors
 class ChoreHelperConfigFlowHandler(SchemaConfigFlowHandler, domain=const.DOMAIN):
     """Handle a config or options flow for Chore Helper."""
@@ -315,6 +319,6 @@ class ChoreHelperConfigFlowHandler(SchemaConfigFlowHandler, domain=const.DOMAIN)
         The options parameter contains config entry options, which is the union of user
         input from the config flow steps.
         """
-        title = options.get("name", "")
-        user = options.get("user", "Unknown user")
+        title = options.get(CONF_NAME, "")
+        user = options.get(const.CONF_USER, "Unknown user")
         return f"{title} (Assigned to {user})"
