@@ -9,7 +9,6 @@ import voluptuous as vol
 from .const import DOMAIN
 from homeassistant import config_entries
 from homeassistant.const import ATTR_HIDDEN, CONF_NAME
-from homeassistant.auth import async_get_users
 from homeassistant.core import callback
 from homeassistant.helpers import selector
 from homeassistant.helpers.schema_config_entry_flow import (
@@ -19,14 +18,6 @@ from homeassistant.helpers.schema_config_entry_flow import (
     SchemaFlowMenuStep,
 )
 from . import const, helpers
-
-async def get_user_options(hass) -> list[dict[str, str]]:
-    """Fetch user options for the selector."""
-    users = await async_get_users(hass)
-    return [
-        {"value": user.id, "label": user.name}
-        for user in users
-    ]
 
 async def get_person_entities(hass) -> dict[str, str]:
     """Return a dictionary of valid person entity IDs and their names."""
@@ -77,7 +68,6 @@ async def general_schema_definition(
     handler: SchemaConfigFlowHandler,
 ) -> dict[vol.Required | vol.Optional, Any]:
     """Create general schema."""
-    user_options = await get_user_options(handler.hass)
     person_entities = await get_person_entities(handler.hass)
 
     schema = {
@@ -99,9 +89,6 @@ async def general_schema_definition(
         optional(ATTR_HIDDEN, handler.options, False): bool,
         optional(const.CONF_MANUAL, handler.options, False): bool,
         optional(const.CONF_SHOW_OVERDUE_TODAY, handler.options, const.DEFAULT_SHOW_OVERDUE_TODAY): bool,
-        optional(const.CONF_USER, handler.options): selector.SelectSelector(
-            selector.SelectSelectorConfig(options=user_options)
-        ),
         optional(const.CONF_PERSON, handler.options): selector.SelectSelector(
             selector.SelectSelectorConfig(options=person_entities)
         ),
