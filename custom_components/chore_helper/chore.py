@@ -116,7 +116,7 @@ class Chore(RestoreEntity):
     async def _add_to_calendar(self) -> None:
         """Add the chore to the calendar platform."""
         if not self.hidden:
-            self._create_calendar_if_needed()
+            await self._create_calendar_if_needed()
             self.hass.data[const.DOMAIN][const.CALENDAR_PLATFORM].add_entity(self.entity_id)
 
     async def _remove_from_calendar(self) -> None:
