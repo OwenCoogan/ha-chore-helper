@@ -123,12 +123,12 @@ class Chore(RestoreEntity):
         """Remove the chore from the calendar platform."""
         self.hass.data[const.DOMAIN][const.CALENDAR_PLATFORM].remove_entity(self.entity_id)
 
-    def _create_calendar_if_needed(self) -> None:
+    async def _create_calendar_if_needed(self) -> None:
         """Create a calendar if not already present."""
         if const.CALENDAR_PLATFORM not in self.hass.data[const.DOMAIN]:
             self.hass.data[const.DOMAIN][const.CALENDAR_PLATFORM] = EntitiesCalendarData(self.hass)
             LOGGER.debug("Creating chore calendar")
-            self.hass.config_entries.async_forward_entry_setups(self.config_entry, PLATFORMS)
+            await self.hass.config_entries.async_forward_entry_setups(self.config_entry, PLATFORMS)
 
     def _remove_from_registry(self) -> None:
         """Remove the entity from the platform registry."""
