@@ -62,7 +62,7 @@ def month_day_text(value: Any) -> str:
     except ValueError as error:
         raise vol.Invalid(f"Invalid date: {value}") from error
 
-def parse_optional_date(attributes: dict[str, Any], key: str) -> datetime | None:
+def parse_optional_datetime(attributes: dict[str, Any], key: str) -> datetime | None:
     """Parse an optional date from the attributes dictionary."""
     date_str = attributes.get(key)
     if date_str:
