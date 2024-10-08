@@ -17,12 +17,10 @@ from homeassistant.helpers.schema_config_entry_flow import (
     SchemaFlowError,
     SchemaFlowFormStep,
     SchemaFlowMenuStep,
-    SchemaOptionsFlowHandler,
 )
 from . import const, helpers
 
-
-async def get_user_options(hass):
+async def get_user_options(hass) -> list[dict[str, str]]:
     """Fetch user options for the selector."""
     users = await async_get_users(hass)
     return [
@@ -30,28 +28,21 @@ async def get_user_options(hass):
         for user in users
     ]
 
-
-async def get_person_entities(hass):
+async def get_person_entities(hass) -> dict[str, str]:
     """Return a dictionary of valid person entity IDs and their names."""
     persons = hass.states.async_all('person')  # Fetch all entities in the 'person' domain
     return {person.entity_id: person.name for person in persons}
 
-
 async def _validate_config(
-    _: SchemaConfigFlowHandler | SchemaOptionsFlowHandler, data: Any
+    _: SchemaConfigFlowHandler, data: Any
 ) -> Any:
     """Validate config."""
-    # Validate day of the month
+    # Validate various configuration options
     if const.CONF_DAY_OF_MONTH in data and data[const.CONF_DAY_OF_MONTH] < 1:
         data[const.CONF_DAY_OF_MONTH] = None
 
-    # Validate the date field
     if const.CONF_DATE in data:
-        if (
-            data[const.CONF_DATE] == "0"
-            or data[const.CONF_DATE] == "0/0"
-            or data[const.CONF_DATE] == ""
-        ):
+        if data[const.CONF_DATE] in {"0", "0/0", ""}:
             data[const.CONF_DATE] = None
         else:
             try:
@@ -59,18 +50,12 @@ async def _validate_config(
             except vol.Invalid as exc:
                 raise SchemaFlowError("month_day") from exc
 
-    # Validate weekday order number
-    if (
-        const.CONF_WEEKDAY_ORDER_NUMBER in data
-        and int(data[const.CONF_WEEKDAY_ORDER_NUMBER]) == 0
-    ):
+    if const.CONF_WEEKDAY_ORDER_NUMBER in data and int(data[const.CONF_WEEKDAY_ORDER_NUMBER]) == 0:
         data[const.CONF_WEEKDAY_ORDER_NUMBER] = None
 
-    # Validate chore day
     if const.CONF_CHORE_DAY in data and data[const.CONF_CHORE_DAY] == "0":
         data[const.CONF_CHORE_DAY] = None
 
-    # Ensure the selected user is valid
     if const.CONF_USER in data:
         user_id = data[const.CONF_USER]
         # Additional validation can be added here if necessary
@@ -78,59 +63,32 @@ async def _validate_config(
 
     return data
 
-
-def required(
-    key: str, options: dict[str, Any], default: Any | None = None
-) -> vol.Required:
+def required(key: str, options: dict[str, Any], default: Any | None = None) -> vol.Required:
     """Return vol.Required."""
-    if isinstance(options, dict) and key in options:
-        suggested_value = options[key]
-    elif default is not None:
-        suggested_value = default
-    else:
-        return vol.Required(key)
+    suggested_value = options.get(key, default)
     return vol.Required(key, description={"suggested_value": suggested_value})
 
-
-def optional(
-    key: str, options: dict[str, Any], default: Any | None = None
-) -> vol.Optional:
+def optional(key: str, options: dict[str, Any], default: Any | None = None) -> vol.Optional:
     """Return vol.Optional."""
-    if isinstance(options, dict) and key in options:
-        suggested_value = options[key]
-    elif default is not None:
-        suggested_value = default
-    else:
-        return vol.Optional(key)
+    suggested_value = options.get(key, default)
     return vol.Optional(key, description={"suggested_value": suggested_value})
 
-
-def general_schema_definition(
-    handler: SchemaConfigFlowHandler | SchemaOptionsFlowHandler,
-) -> Mapping[str, Any]:
+async def general_schema_definition(
+    handler: SchemaConfigFlowHandler,
+) -> dict[vol.Required | vol.Optional, Any]:
     """Create general schema."""
-    user_options = handler.hass.loop.run_until_complete(get_user_options(handler.hass))
+    user_options = await get_user_options(handler.hass)
+    person_entities = await get_person_entities(handler.hass)
+
     schema = {
-        required(
-            const.CONF_FREQUENCY, handler.options, const.DEFAULT_FREQUENCY
-        ): selector.SelectSelector(
+        required(const.CONF_FREQUENCY, handler.options, const.DEFAULT_FREQUENCY): selector.SelectSelector(
             selector.SelectSelectorConfig(options=const.FREQUENCY_OPTIONS)
         ),
-        optional(
-            const.CONF_ICON_NORMAL, handler.options, const.DEFAULT_ICON_NORMAL
-        ): selector.IconSelector(),
-        optional(
-            const.CONF_ICON_TOMORROW, handler.options, const.DEFAULT_ICON_TOMORROW
-        ): selector.IconSelector(),
-        optional(
-            const.CONF_ICON_TODAY, handler.options, const.DEFAULT_ICON_TODAY
-        ): selector.IconSelector(),
-        optional(
-            const.CONF_ICON_OVERDUE, handler.options, const.DEFAULT_ICON_OVERDUE
-        ): selector.IconSelector(),
-        optional(
-            const.CONF_FORECAST_DATES, handler.options, const.DEFAULT_FORECAST_DATES
-        ): selector.NumberSelector(
+        optional(const.CONF_ICON_NORMAL, handler.options, const.DEFAULT_ICON_NORMAL): selector.IconSelector(),
+        optional(const.CONF_ICON_TOMORROW, handler.options, const.DEFAULT_ICON_TOMORROW): selector.IconSelector(),
+        optional(const.CONF_ICON_TODAY, handler.options, const.DEFAULT_ICON_TODAY): selector.IconSelector(),
+        optional(const.CONF_ICON_OVERDUE, handler.options, const.DEFAULT_ICON_OVERDUE): selector.IconSelector(),
+        optional(const.CONF_FORECAST_DATES, handler.options, const.DEFAULT_FORECAST_DATES): selector.NumberSelector(
             selector.NumberSelectorConfig(
                 min=0,
                 max=100,
@@ -140,55 +98,44 @@ def general_schema_definition(
         ),
         optional(ATTR_HIDDEN, handler.options, False): bool,
         optional(const.CONF_MANUAL, handler.options, False): bool,
-        optional(
-            const.CONF_SHOW_OVERDUE_TODAY,
-            handler.options,
-            const.DEFAULT_SHOW_OVERDUE_TODAY,
-        ): bool,
-        optional(
-            const.CONF_USER, handler.options
-        ): selector.SelectSelector(
+        optional(const.CONF_SHOW_OVERDUE_TODAY, handler.options, const.DEFAULT_SHOW_OVERDUE_TODAY): bool,
+        optional(const.CONF_USER, handler.options): selector.SelectSelector(
             selector.SelectSelectorConfig(options=user_options)
         ),
-        optional(
-            const.CONF_PERSON, handler.options
-        ): selector.SelectSelector(
-            selector.SelectSelectorConfig(options=await get_person_entities(handler.hass))
+        optional(const.CONF_PERSON, handler.options): selector.SelectSelector(
+            selector.SelectSelectorConfig(options=person_entities)
         ),
     }
 
     return schema
 
-
 async def general_config_schema(
-    handler: SchemaConfigFlowHandler | SchemaOptionsFlowHandler,
+    handler: SchemaConfigFlowHandler,
 ) -> vol.Schema:
     """Generate config schema."""
     schema_obj = {required(CONF_NAME, handler.options): selector.TextSelector()}
-    schema_obj.update(general_schema_definition(handler))
+    schema_obj.update(await general_schema_definition(handler))
     return vol.Schema(schema_obj)
 
-
 async def general_options_schema(
-    handler: SchemaConfigFlowHandler | SchemaOptionsFlowHandler,
+    handler: SchemaConfigFlowHandler,
 ) -> vol.Schema:
     """Generate options schema."""
-    return vol.Schema(general_schema_definition(handler))
-
+    return vol.Schema(await general_schema_definition(handler))
 
 async def detail_config_schema(
-    handler: SchemaConfigFlowHandler | SchemaOptionsFlowHandler,
+    handler: SchemaConfigFlowHandler,
 ) -> vol.Schema:
     """Generate options schema."""
-    options_schema: dict[vol.Optional | vol.Required, Any] = {}
+    options_schema = {}
     frequency = handler.options.get(const.CONF_FREQUENCY)
 
     if frequency not in const.BLANK_FREQUENCY:
         if frequency in (
-            const.DAILY_FREQUENCY
-            + const.WEEKLY_FREQUENCY
-            + const.MONTHLY_FREQUENCY
-            + const.YEARLY_FREQUENCY
+            const.DAILY_FREQUENCY +
+            const.WEEKLY_FREQUENCY +
+            const.MONTHLY_FREQUENCY +
+            const.YEARLY_FREQUENCY
         ):
             uom = {
                 "every-n-days": "day(s)",
@@ -200,72 +147,51 @@ async def detail_config_schema(
                 "after-n-months": "month(s)",
                 "after-n-years": "year(s)",
             }
-            options_schema[required(const.CONF_PERIOD, handler.options)] = (
-                selector.NumberSelector(
-                    selector.NumberSelectorConfig(
-                        min=1,
-                        max=1000,
-                        mode=selector.NumberSelectorMode.BOX,
-                        unit_of_measurement=uom[frequency],
-                    )
+            options_schema[required(const.CONF_PERIOD, handler.options)] = selector.NumberSelector(
+                selector.NumberSelectorConfig(
+                    min=1,
+                    max=1000,
+                    mode=selector.NumberSelectorMode.BOX,
+                    unit_of_measurement=uom[frequency],
                 )
             )
 
         if frequency in const.YEARLY_FREQUENCY:
-            options_schema[optional(const.CONF_DATE, handler.options)] = (
-                selector.TextSelector()
-            )
+            options_schema[optional(const.CONF_DATE, handler.options)] = selector.TextSelector()
 
         if frequency in const.MONTHLY_FREQUENCY:
-            options_schema[optional(const.CONF_DAY_OF_MONTH, handler.options)] = (
-                selector.NumberSelector(
-                    selector.NumberSelectorConfig(
-                        min=1,
-                        max=31,
-                        mode=selector.NumberSelectorMode.BOX,
-                    )
+            options_schema[optional(const.CONF_DAY_OF_MONTH, handler.options)] = selector.NumberSelector(
+                selector.NumberSelectorConfig(
+                    min=1,
+                    max=31,
+                    mode=selector.NumberSelectorMode.BOX,
                 )
             )
-
-            options_schema[
-                optional(const.CONF_WEEKDAY_ORDER_NUMBER, handler.options)
-            ] = selector.SelectSelector(
+            options_schema[optional(const.CONF_WEEKDAY_ORDER_NUMBER, handler.options)] = selector.SelectSelector(
                 selector.SelectSelectorConfig(
                     options=const.ORDER_OPTIONS,
                     mode=selector.SelectSelectorMode.DROPDOWN,
                 )
             )
-
-            options_schema[optional(const.CONF_FORCE_WEEK_NUMBERS, handler.options)] = (
-                selector.BooleanSelector()
-            )
-
-            options_schema[optional(const.CONF_DUE_DATE_OFFSET, handler.options)] = (
-                selector.NumberSelector(
-                    selector.NumberSelectorConfig(
-                        min=-7,
-                        max=7,
-                        mode=selector.NumberSelectorMode.SLIDER,
-                        unit_of_measurement="day(s)",
-                    )
+            options_schema[optional(const.CONF_FORCE_WEEK_NUMBERS, handler.options)] = selector.BooleanSelector()
+            options_schema[optional(const.CONF_DUE_DATE_OFFSET, handler.options)] = selector.NumberSelector(
+                selector.NumberSelectorConfig(
+                    min=-7,
+                    max=7,
+                    mode=selector.NumberSelectorMode.SLIDER,
+                    unit_of_measurement="day(s)",
                 )
             )
 
         if frequency in (const.WEEKLY_FREQUENCY + const.MONTHLY_FREQUENCY):
-            options_schema[optional(const.CONF_CHORE_DAY, handler.options)] = (
-                selector.SelectSelector(
-                    selector.SelectSelectorConfig(
-                        options=const.WEEKDAY_OPTIONS,
-                    )
+            options_schema[optional(const.CONF_CHORE_DAY, handler.options)] = selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=const.WEEKDAY_OPTIONS,
                 )
             )
 
         if frequency in const.WEEKLY_FREQUENCY:
-            options_schema[
-                required(
-                    const.CONF_FIRST_WEEK, handler.options, const.DEFAULT_FIRST_WEEK
-                )
-            ] = selector.NumberSelector(
+            options_schema[required(const.CONF_FIRST_WEEK, handler.options, const.DEFAULT_FIRST_WEEK)] = selector.NumberSelector(
                 selector.NumberSelectorConfig(
                     min=1,
                     max=52,
@@ -275,32 +201,20 @@ async def detail_config_schema(
             )
 
         if frequency not in const.YEARLY_FREQUENCY:
-            options_schema[
-                optional(
-                    const.CONF_FIRST_MONTH, handler.options, const.DEFAULT_FIRST_MONTH
-                )
-            ] = selector.SelectSelector(
+            options_schema[optional(const.CONF_FIRST_MONTH, handler.options, const.DEFAULT_FIRST_MONTH)] = selector.SelectSelector(
                 selector.SelectSelectorConfig(options=const.MONTH_OPTIONS)
             )
-            options_schema[
-                optional(
-                    const.CONF_LAST_MONTH, handler.options, const.DEFAULT_LAST_MONTH
-                )
-            ] = selector.SelectSelector(
+            options_schema[optional(const.CONF_LAST_MONTH, handler.options, const.DEFAULT_LAST_MONTH)] = selector.SelectSelector(
                 selector.SelectSelectorConfig(options=const.MONTH_OPTIONS)
             )
 
-        options_schema[
-            required(const.CONF_START_DATE, handler.options, helpers.now().date())
-        ] = selector.DateSelector()
+        options_schema[required(const.CONF_START_DATE, handler.options, helpers.now().date())] = selector.DateSelector()
 
     return vol.Schema(options_schema)
-
 
 async def choose_details_step(_: dict[str, Any]) -> str:
     """Return next step_id for options flow."""
     return "detail"
-
 
 CONFIG_FLOW: dict[str, SchemaFlowFormStep | SchemaFlowMenuStep] = {
     "user": SchemaFlowFormStep(general_config_schema, next_step=choose_details_step),
@@ -316,7 +230,6 @@ OPTIONS_FLOW: dict[str, SchemaFlowFormStep | SchemaFlowMenuStep] = {
     ),
 }
 
-# mypy: ignore-errors
 class ChoreHelperConfigFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config or options flow for Chore Helper."""
 
@@ -334,11 +247,7 @@ class ChoreHelperConfigFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
     @callback
     def async_config_entry_title(self, options: Mapping[str, Any]) -> str:
-        """Return config entry title.
-
-        The options parameter contains config entry options, which is the union of user
-        input from the config flow steps.
-        """
+        """Return config entry title."""
         title = options.get(CONF_NAME, "")
         user = options.get(const.CONF_USER, "Unknown user")
         return f"{title} (Assigned to {user})"
