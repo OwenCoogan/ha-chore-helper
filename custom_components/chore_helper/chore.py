@@ -97,9 +97,9 @@ class Chore(RestoreEntity):
         self._remove_from_registry()
         self._remove_from_calendar()
 
-    def _restore_state(self) -> None:
+    async def _restore_state(self) -> None:
         """Restore state from the last known state."""
-        state = self.async_get_last_state()
+        state = await self.async_get_last_state()  # Await the coroutine
         if not state:
             return
         self._attr_state = state.state
