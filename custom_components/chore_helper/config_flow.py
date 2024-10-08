@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-# import uuid
 from collections.abc import Mapping
 from typing import Any
 
@@ -49,6 +48,13 @@ async def _validate_config(
 
     if const.CONF_CHORE_DAY in data and data[const.CONF_CHORE_DAY] == "0":
         data[const.CONF_CHORE_DAY] = None
+
+    # Ensure the selected user is valid
+    if const.CONF_USER in data:
+        user_id = data[const.CONF_USER]
+        # Additional validation can be added here if necessary
+        data[const.CONF_USER] = user_id  # Store the user ID
+
     return data
 
 
@@ -271,6 +277,7 @@ CONFIG_FLOW: dict[str, SchemaFlowFormStep | SchemaFlowMenuStep] = {
         detail_config_schema, validate_user_input=_validate_config
     ),
 }
+
 OPTIONS_FLOW: dict[str, SchemaFlowFormStep | SchemaFlowMenuStep] = {
     "init": SchemaFlowFormStep(general_options_schema, next_step=choose_details_step),
     "detail": SchemaFlowFormStep(
