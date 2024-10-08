@@ -28,13 +28,12 @@ MIN_TIME_BETWEEN_UPDATES = timedelta(seconds=30)
 months = [m["value"] for m in const.MONTH_OPTIONS]
 frequencies = [f["value"] for f in const.FREQUENCY_OPTIONS]
 
+valid_person_ids = {}
+
 async def get_person_ids(hass: HomeAssistant):
     """Return a dictionary of valid person entity IDs and their names."""
     persons = hass.states.async_all('person')  # Fetch all entities in the 'person' domain
     return {person.entity_id: person.name for person in persons}
-
-# Initialize the person IDs once at setup
-valid_person_ids = {}
 
 SENSOR_SCHEMA = vol.Schema(
     {
@@ -120,11 +119,14 @@ OFFSET_DATE_SCHEMA = vol.Schema(
     }
 )
 
-# pylint: disable=unused-argument
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     """Set up platform - register services, initialize data structure."""
     global valid_person_ids
     valid_person_ids = await get_person_ids(hass)  # Retrieve person entity IDs at setup
+
+    # Register services
+    hass.data.setdefault(const.DOMAIN, {})
+    hass.data[const.DOMAIN].setdefault(const.SENSOR_PLATFORM, {})
 
     # Service Handlers
     async def handle_add_date(call: ServiceCall) -> None:
@@ -216,8 +218,6 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
                     "Failed setting last completed for %s - %s", entity_id, err
                 )
 
-    hass.data.setdefault(const.DOMAIN, {})
-    hass.data[const.DOMAIN].setdefault(const.SENSOR_PLATFORM, {})
     hass.services.async_register(
         const.DOMAIN,
         "complete",
@@ -242,6 +242,7 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     hass.services.async_register(
         const.DOMAIN, "offset_date", handle_offset_date, schema=OFFSET_DATE_SCHEMA
     )
+
     return True
 
 async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
@@ -266,7 +267,6 @@ async def async_remove_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> 
         LOGGER.info("Successfully removed sensor from the chore_helper integration")
     except ValueError:
         pass
-
 
 async def update_listener(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Update listener - to re-create device after options update."""

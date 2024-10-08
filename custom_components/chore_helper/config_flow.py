@@ -6,6 +6,8 @@ from collections.abc import Mapping
 from typing import Any
 
 import voluptuous as vol
+from .const import DOMAIN
+from homeassistant import config_entries
 from homeassistant.const import ATTR_HIDDEN, CONF_NAME
 from homeassistant.auth import async_get_users
 from homeassistant.core import callback
@@ -17,7 +19,6 @@ from homeassistant.helpers.schema_config_entry_flow import (
     SchemaFlowMenuStep,
     SchemaOptionsFlowHandler,
 )
-
 from . import const, helpers
 
 
@@ -305,12 +306,20 @@ OPTIONS_FLOW: dict[str, SchemaFlowFormStep | SchemaFlowMenuStep] = {
 }
 
 # mypy: ignore-errors
-class ChoreHelperConfigFlowHandler(SchemaConfigFlowHandler, domain=const.DOMAIN):
+class ChoreHelperConfigFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config or options flow for Chore Helper."""
 
     config_flow = CONFIG_FLOW
     options_flow = OPTIONS_FLOW
     VERSION = const.CONFIG_VERSION
+
+    async def async_step_user(self, user_input: dict[str, Any] = None) -> dict[str, Any]:
+        """Handle the initial step."""
+        if user_input is None:
+            return self.async_show_form(step_id="user")
+
+        # Process user input and create a config entry
+        return self.async_create_entry(title="Chore Helper", data=user_input)
 
     @callback
     def async_config_entry_title(self, options: Mapping[str, Any]) -> str:
