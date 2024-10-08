@@ -88,7 +88,7 @@ class Chore(RestoreEntity):
     async def async_added_to_hass(self) -> None:
         """When sensor is added to HA, restore state and add it to calendar."""
         await super().async_added_to_hass()
-        self._restore_state()
+        await self._restore_state()
         await self._add_to_calendar()
 
     async def async_will_remove_from_hass(self) -> None:
