@@ -13,7 +13,7 @@ CALENDAR_PLATFORM = "calendar"
 ATTRIBUTION = "Data is provided by chore_helper"
 CONFIG_VERSION = 6
 CONF_USER = "user"
-DEVICE_CLASS_CHORE = "chore" 
+DEVICE_CLASS_CHORE = "chore"
 
 ATTR_NEXT_DATE = "next_due_date"
 ATTR_DAYS = "days"
