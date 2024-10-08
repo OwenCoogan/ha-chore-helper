@@ -35,6 +35,11 @@ async def get_person_ids(hass: HomeAssistant):
     persons = hass.states.async_all('person')  # Fetch all entities in the 'person' domain
     return {person.entity_id: person.name for person in persons}
 
+async def refresh_valid_person_ids(hass: HomeAssistant):
+    """Refresh the valid person IDs from Home Assistant."""
+    global valid_person_ids
+    valid_person_ids = await get_person_ids(hass)
+
 SENSOR_SCHEMA = vol.Schema(
     {
         vol.Required(const.CONF_FREQUENCY): vol.In(frequencies),
@@ -78,7 +83,7 @@ COMPLETE_NOW_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_ENTITY_ID): vol.All(cv.ensure_list, [cv.string]),
         vol.Optional(const.ATTR_LAST_COMPLETED): cv.datetime,
-        vol.Optional(const.CONF_USER): vol.In(valid_person_ids),  # This will be populated later
+        vol.Optional(const.CONF_USER): vol.In(valid_person_ids.keys()),  # Use keys for valid user IDs
     }
 )
 
@@ -272,6 +277,7 @@ async def async_remove_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> 
 
 async def update_listener(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Update listener - to re-create device after options update."""
+    await refresh_valid_person_ids(hass)  # Refresh person IDs on update
     await hass.config_entries.async_forward_entry_unload(entry, const.SENSOR_PLATFORM)
     hass.async_add_job(
         hass.config_entries.async_forward_entry_setup(entry, const.SENSOR_PLATFORM)
