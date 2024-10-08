@@ -7,6 +7,7 @@ from typing import Any
 
 import voluptuous as vol
 from homeassistant.const import ATTR_HIDDEN, CONF_NAME
+from homeassistant.auth import async_get_users
 from homeassistant.core import callback
 from homeassistant.helpers import selector
 from homeassistant.helpers.schema_config_entry_flow import (
@@ -19,6 +20,14 @@ from homeassistant.helpers.schema_config_entry_flow import (
 
 from . import const, helpers
 
+
+async def get_user_options(hass):
+    """Fetch user options for the selector."""
+    users = await async_get_users(hass)
+    return [
+        {"value": user.id, "label": user.name}
+        for user in users
+    ]
 
 async def _validate_config(
     _: SchemaConfigFlowHandler | SchemaOptionsFlowHandler, data: Any
@@ -88,6 +97,7 @@ def general_schema_definition(
     handler: SchemaConfigFlowHandler | SchemaOptionsFlowHandler,
 ) -> Mapping[str, Any]:
     """Create general schema."""
+    user_options = handler.hass.loop.run_until_complete(get_user_options(handler.hass))
     schema = {
         required(
             const.CONF_FREQUENCY, handler.options, const.DEFAULT_FREQUENCY
@@ -123,7 +133,11 @@ def general_schema_definition(
             handler.options,
             const.DEFAULT_SHOW_OVERDUE_TODAY,
         ): bool,
-        optional(const.CONF_USER, handler.options): selector.UserSelector(),
+         optional(
+            const.CONF_USER, handler.options
+        ): selector.SelectSelector(
+            selector.SelectSelectorConfig(options=user_options)
+        ),
     }
 
     return schema
