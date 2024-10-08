@@ -4,11 +4,8 @@ For more details about this integration, please refer to
 https://github.com/bmcclure/ha-chore-helper
 """
 
-
 from __future__ import annotations
-
 from datetime import timedelta
-
 import homeassistant.helpers.config_validation as cv
 import homeassistant.util.dt as dt_util
 from homeassistant.config_entries import ConfigEntry
@@ -31,13 +28,13 @@ MIN_TIME_BETWEEN_UPDATES = timedelta(seconds=30)
 months = [m["value"] for m in const.MONTH_OPTIONS]
 frequencies = [f["value"] for f in const.FREQUENCY_OPTIONS]
 
-async def get_user_ids(hass: HomeAssistant):
-    """Return a dictionary of valid user IDs and their names."""
-    users = await hass.auth.async_get_users()
-    return {user.id: user.name for user in users if not user.is_owner}
+async def get_person_ids(hass: HomeAssistant):
+    """Return a dictionary of valid person entity IDs and their names."""
+    persons = hass.states.async_all('person')  # Fetch all entities in the 'person' domain
+    return {person.entity_id: person.name for person in persons}
 
-# Initialize the user IDs once at setup
-valid_user_ids = {}
+# Initialize the person IDs once at setup
+valid_person_ids = {}
 
 SENSOR_SCHEMA = vol.Schema(
     {
@@ -64,7 +61,7 @@ SENSOR_SCHEMA = vol.Schema(
         ),
         vol.Optional(const.CONF_START_DATE): cv.date,
         vol.Optional(const.CONF_DATE_FORMAT): cv.string,
-        vol.Optional(const.CONF_USER): vol.In([]),
+        vol.Optional(const.CONF_USER): vol.In([]),  # Will be populated later with valid_person_ids
     },
     extra=vol.ALLOW_EXTRA,
 )
@@ -82,7 +79,7 @@ COMPLETE_NOW_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_ENTITY_ID): vol.All(cv.ensure_list, [cv.string]),
         vol.Optional(const.ATTR_LAST_COMPLETED): cv.datetime,
-        vol.Optional(const.CONF_USER): vol.In(valid_user_ids),
+        vol.Optional(const.CONF_USER): vol.In(valid_person_ids),
     }
 )
 
@@ -126,8 +123,8 @@ OFFSET_DATE_SCHEMA = vol.Schema(
 # pylint: disable=unused-argument
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     """Set up platform - register services, initialize data structure."""
-    global valid_user_ids
-    valid_user_ids = await get_user_ids(hass)  # Retrieve user IDs at setup
+    global valid_person_ids
+    valid_person_ids = await get_person_ids(hass)  # Retrieve person entity IDs at setup
 
     # Service Handlers
     async def handle_add_date(call: ServiceCall) -> None:
@@ -205,10 +202,10 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
             try:
                 entity = hass.data[const.DOMAIN][const.SENSOR_PLATFORM][entity_id]
 
-                # Check if the user completing the chore is valid
-                if completing_user and completing_user not in valid_user_ids:
+                # Check if the person completing the chore is valid
+                if completing_user and completing_user not in valid_person_ids:
                     LOGGER.error(
-                        "Invalid user %s trying to complete chore for %s", completing_user, entity_id
+                        "Invalid person %s trying to complete chore for %s", completing_user, entity_id
                     )
                     return
 
